@@ -53,6 +53,15 @@ const config = {
     strike: 'text-decoration:line-through',
     u: 'text-decoration:underline'
     // #endif
+  },
+
+  // svg 大小写对照表
+  svgDict: {
+    animatetransform: 'animateTransform',
+    viewbox: 'viewBox',
+    attributename: 'attributeName',
+    repeatcount: 'repeatCount',
+    repeatdur: 'repeatDur'
   }
 }
 const tagSelector = {}
@@ -553,6 +562,7 @@ Parser.prototype.onCloseTag = function (name) {
  * @private
  */
 Parser.prototype.popNode = function () {
+  const editable = this.options.editable
   const node = this.stack.pop()
   let attrs = node.attrs
   const children = node.children
@@ -589,8 +599,26 @@ Parser.prototype.popNode = function () {
       this.xml--
       return
     }
+    // #ifdef APP-PLUS-NVUE
+    (function traversal (node) {
+      if (node.name) {
+        // 调整 svg 的大小写
+        node.name = config.svgDict[node.name] || node.name
+        for (const item in node.attrs) {
+          if (config.svgDict[item]) {
+            node.attrs[config.svgDict[item]] = node.attrs[item]
+            node.attrs[item] = undefined
+          }
+        }
+        for (let i = 0; i < node.children.length; i++) {
+          traversal(node.children[i])
+        }
+      }
+    })(node)
+    // #endif
     // #ifndef APP-PLUS-NVUE
-    let src = ''; const style = attrs.style
+    let src = ''
+    const style = attrs.style
     attrs.style = ''
     attrs.xmlns = 'http://www.w3.org/2000/svg';
     (function traversal (node) {
@@ -598,14 +626,12 @@ Parser.prototype.popNode = function () {
         src += node.text
         return
       }
-      src += '<' + node.name
-      for (let item in node.attrs) {
+      const name = config.svgDict[node.name] || node.name
+      src += '<' + name
+      for (const item in node.attrs) {
         const val = node.attrs[item]
         if (val) {
-          if (item === 'viewbox') {
-            item = 'viewBox'
-          }
-          src += ` ${item}="${val}"`
+          src += ` ${config.svgDict[item] || item}="${val}"`
         }
       }
       if (!node.children) {
@@ -615,7 +641,7 @@ Parser.prototype.popNode = function () {
         for (let i = 0; i < node.children.length; i++) {
           traversal(node.children[i])
         }
-        src += '</' + node.name + '>'
+        src += '</' + name + '>'
       }
     })(node)
     node.name = 'img'
@@ -690,7 +716,9 @@ Parser.prototype.popNode = function () {
 
   // #ifndef APP-PLUS-NVUE
   if (config.blockTags[node.name]) {
-    node.name = 'div'
+    if (!editable) {
+      node.name = 'div'
+    }
   } else if (!config.trustTags[node.name] && !this.xml) {
     // 未知标签转为 span，避免无法显示
     node.name = 'span'
@@ -704,6 +732,9 @@ Parser.prototype.popNode = function () {
     this.expose()
   } /* #ifdef APP-PLUS */ else if (node.name === 'video') {
     let str = '<video style="width:100%;height:100%"'
+    if (editable) {
+      attrs.controls = ''
+    }
     for (const item in attrs) {
       if (attrs[item]) {
         str += ' ' + item + '="' + attrs[item] + '"'
@@ -718,7 +749,7 @@ Parser.prototype.popNode = function () {
     }
     str += '</video>'
     node.html = str
-  } /* #endif */ else if ((node.name === 'ul' || node.name === 'ol') && node.c) {
+  } /* #endif */ else if ((node.name === 'ul' || node.name === 'ol') && (node.c || editable)) {
     // 列表处理
     const types = {
       a: 'lower-alpha',
@@ -741,7 +772,7 @@ Parser.prototype.popNode = function () {
     let padding = parseFloat(attrs.cellpadding)
     let spacing = parseFloat(attrs.cellspacing)
     const border = parseFloat(attrs.border)
-    if (node.c) {
+    if ((node.c || editable)) {
       // padding 和 spacing 默认 2
       if (isNaN(padding)) {
         padding = 2
@@ -753,7 +784,7 @@ Parser.prototype.popNode = function () {
     if (border) {
       attrs.style += ';border:' + border + 'px solid gray'
     }
-    if (node.flag && node.c) {
+    if (node.flag && (node.c || editable)) {
       // 有 colspan 或 rowspan 且含有链接的表格通过 grid 布局实现
       styleObj.display = 'grid'
       if (spacing) {
@@ -786,8 +817,11 @@ Parser.prototype.popNode = function () {
           if (td.name === 'td' || td.name === 'th') {
             // 这个格子被上面的单元格占用，则列号++
             while (map[row + '.' + col]) {
-              col++
-            }
+            col++
+          }
+          if (editable) {
+            td.r = row
+          }
             let style = td.attrs.style || ''
             const start = style.indexOf('width') ? style.indexOf(';width') : 0
             // 提取出 td 的宽度
@@ -840,7 +874,7 @@ Parser.prototype.popNode = function () {
       node.children = cells
     } else {
       // 没有使用合并单元格的表格通过 table 布局实现
-      if (node.c) {
+      if ((node.c || editable)) {
         styleObj.display = 'table'
       }
       if (!isNaN(spacing)) {
@@ -903,7 +937,7 @@ Parser.prototype.popNode = function () {
         children.splice(i + 1, 1)
       }
     }
-  } else if (node.c) {
+  } else if (!editable && node.c ) {
     node.c = 2
     for (let i = node.children.length; i--;) {
       if (!node.children[i].c || node.children[i].name === 'table') {
@@ -912,7 +946,7 @@ Parser.prototype.popNode = function () {
     }
   }
 
-  if ((styleObj.display || '').includes('flex') && !node.c) {
+  if ((styleObj.display || '').includes('flex') && !(node.c || editable)) {
     for (let i = children.length; i--;) {
       const item = children[i]
       if (item.f) {
@@ -925,7 +959,7 @@ Parser.prototype.popNode = function () {
   const flex = parent && (parent.attrs.style || '').includes('flex')
     // #ifdef MP-WEIXIN
     // 检查基础库版本 virtualHost 是否可用
-    && !(node.c && wx.getNFCAdapter) // eslint-disable-line
+    && !((node.c || editable) && wx.getNFCAdapter) // eslint-disable-line
     // #endif
     // #ifndef MP-WEIXIN || MP-QQ || MP-BAIDU || MP-TOUTIAO
     && !node.c // eslint-disable-line

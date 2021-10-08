@@ -1,12 +1,20 @@
 <template>
-  <view id="_root" :class="(selectable?'_select ':'')+'_root'" :style="containerStyle">
+  <view id="_root" :class="(selectable?'_select ':'')+'_root'" :style="(editable?'position:relative;min-height:200px;':'')+containerStyle" @tap="_containTap">
     <slot v-if="!nodes[0]" />
     <!-- #ifndef APP-PLUS-NVUE -->
-    <node v-else :childs="nodes" :opts="[lazyLoad,loadingImg,errorImg,showImgMenu]" name="span" />
+    <node v-else :childs="nodes" :opts="[lazyLoad,loadingImg,errorImg,showImgMenu,editable,placeholder,'nodes']" name="span" />
     <!-- #endif -->
     <!-- #ifdef APP-PLUS-NVUE -->
     <web-view ref="web" src="/static/app-plus/mp-html/local.html" :style="'margin-top:-2px;height:' + height + 'px'" @onPostMessage="_onMessage" />
     <!-- #endif -->
+    <view v-if="tooltip" class="_tooltip_contain" :style="'top:'+tooltip.top+'px'">
+      <view class="_tooltip">
+        <view v-for="(item, index) in tooltip.items" v-bind:key="index" class="_tooltip_item" :data-i="index" @tap="_tooltipTap">{{item}}</view>
+      </view>
+    </view>
+    <view v-if="slider" class="_slider" :style="'top:'+slider.top+'px'">
+      <slider :value="slider.value" :min="slider.min" :max="slider.max" handle-size="14" block-size="14" show-value activeColor="white" style="padding:3px" @changing="_sliderChanging" @change="_sliderChange" />
+    </view>
   </view>
 </template>
 
@@ -39,15 +47,17 @@
 // #ifndef APP-PLUS-NVUE
 import node from './node/node'
 // #endif
-const plugins=[require('./markdown/index.js'),require('./audio/index.js'),require('./emoji/index.js'),require('./highlight/index.js'),require('./search/index.js'),require('./style/index.js'),require('./img-cache/index.js'),]
+const plugins=[require('./markdown/index.js'),require('./audio/index.js'),require('./emoji/index.js'),require('./highlight/index.js'),require('./search/index.js'),require('./style/index.js'),require('./txv-video/index.js'),require('./img-cache/index.js'),require('./editable/index.js'),]
 const Parser = require('./parser')
 // #ifdef APP-PLUS-NVUE
 const dom = weex.requireModule('dom')
 // #endif
 export default {
   name: 'mp-html',
-  data () {
+  data() {
     return {
+      tooltip: null,
+      slider: null,
       nodes: [],
       // #ifdef APP-PLUS-NVUE
       height: 3
@@ -55,6 +65,8 @@ export default {
     }
   },
   props: {
+    editable: Boolean,
+    placeholder: String,
     ImgCache: Boolean,
     markdown: Boolean,
     containerStyle: {
@@ -106,6 +118,11 @@ export default {
   },
   // #endif
   watch: {
+    editable(val) {
+      this.setContent(val ? this.content : this.getContent())
+      if (!val)
+        this._maskTap()
+    },
     content (content) {
       this.setContent(content)
     }
@@ -117,7 +134,7 @@ export default {
     }
   },
   mounted () {
-    if (this.content && !this.nodes.length) {
+    if ((this.content || this.editable) && !this.nodes.length) {
       this.setContent(this.content)
     }
   },
@@ -126,6 +143,22 @@ export default {
     clearInterval(this._timer)
   },
   methods: {
+    _containTap() {
+      if (!this._lock && !this.slider) {
+        this._edit = undefined
+        this._maskTap()
+      }
+    },
+    _tooltipTap(e) {
+      this._tooltipcb(e.currentTarget.dataset.i)
+      this.$set(this, 'tooltip', null)
+    },
+    _sliderChanging(e) {
+      this._slideringcb(e.detail.value)
+    },
+    _sliderChange(e) {
+      this._slidercb(e.detail.value)
+    },
     /**
      * @description 将锚点跳转的范围限定在一个 scroll-view 内
      * @param {Object} page scroll-view 所在页面的示例
@@ -432,4 +465,43 @@ export default {
   user-select: text;
 }
 /* #endif */
+
+/* 提示条 */
+._tooltip_contain {
+  position: absolute;
+  width: 100vw;
+  text-align: center;
+}
+
+._tooltip {
+  display: inline-block;
+  width: auto;
+  height: 30px;
+  padding: 0 3px;
+  font-size: 14px;
+  line-height: 30px;
+}
+
+._tooltip_item {
+  display: inline-block;
+  width: auto;
+  padding: 0 2vw;
+  line-height: 30px;
+  background-color: black;
+  color: white;
+}
+
+/* 图片宽度滚动条 */
+._slider {
+  position: absolute;
+  left: 20px;
+  width: 220px;
+}
+
+._tooltip,
+._slider {
+  background-color: black;
+  border-radius: 3px;
+  opacity: 0.75;
+}
 </style>
