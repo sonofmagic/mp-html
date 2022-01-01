@@ -79,6 +79,9 @@ module.exports = {
       this.$set(this.ctrl, 'e' + i, 0)
       // 更新到视图
       this.root._setData(`${this.opts[6]}.${i}.text`, e.detail.value)
+      if (e.detail.cursor !== undefined) {
+        this.cursor = e.detail.cursor
+      }
     },
     /**
      * @description 插入一个标签
@@ -169,7 +172,7 @@ module.exports = {
           this.i = 0
           this.cursor = this.childs[0].text.length
         }
-        const items = this.root._getItem(parent.childs[i])
+        const items = this.root._getItem(parent.childs[i], i !== 0, i !== parent.childs.length - 1)
         this.root._tooltip({
           top: getTop(e),
           items,
@@ -202,6 +205,17 @@ module.exports = {
                   this.root._editVal(`${parent.opts[6]}.${i}.attrs.style`, style, parent.childs[i].attrs.style)
                 }
               })
+            } else if (items[tapIndex] === '上移' || items[tapIndex] === '下移') {
+              const arr = parent.childs.slice(0)
+              const item = arr[i]
+              if (items[tapIndex] === '上移') {
+                arr[i] = arr[i - 1]
+                arr[i - 1] = item
+              } else {
+                arr[i] = arr[i + 1]
+                arr[i + 1] = item
+              }
+              this.root._editVal(parent.opts[6], parent.childs, arr, true)
             } else if (items[tapIndex] === '删除') {
               parent.remove(i)
             } else {
@@ -257,8 +271,8 @@ module.exports = {
             switch (items[tapIndex]) {
               case '封面':
                 // 设置封面
-                this.root.getSrc('img', node.attrs.poster).then(url => {
-                  this.root._editVal(`${this.opts[6]}.${i}.attrs.poster`, node.attrs.poster, url, true)
+                this.root.getSrc('img', node.attrs.poster || '').then(url => {
+                  this.root._editVal(`${this.opts[6]}.${i}.attrs.poster`, node.attrs.poster, url instanceof Array ? url[0] : url, true)
                 }).catch(() => { })
                 break
               case '删除':
@@ -367,17 +381,22 @@ module.exports = {
 /* 提示条 */
 ._tooltip_contain {
   position: absolute;
-  width: 100vw;
+  right: 20px;
+  left: 20px;
   text-align: center;
 }
 
 ._tooltip {
+  box-sizing: border-box;
   display: inline-block;
   width: auto;
+  max-width: 100%;
   height: 30px;
   padding: 0 3px;
+  overflow: scroll;
   font-size: 14px;
   line-height: 30px;
+  white-space: nowrap;
 }
 
 ._tooltip_item {
@@ -442,7 +461,7 @@ module.exports = {
             // 修改文本块
             .replace(/<!--\s*文本\s*-->[\s\S]+?<!--\s*链接\s*-->/,
               `<!-- 文本 -->
-      <text v-else-if="n.type==='text'&&!ctrl['e'+i]" :data-i="i" @tap="editStart">{{n.text}}
+      <text v-else-if="n.type==='text'&&!ctrl['e'+i]" :data-i="i" :user-select="n.us" :decode="!opts[4]" @tap="editStart">{{n.text}}
         <text v-if="!n.text" style="color:gray">{{opts[5]||'请输入'}}</text>
       </text>
       <text v-else-if="n.type==='text'&&ctrl['e'+i]===1" :data-i="i" style="border:1px dashed black;min-width:50px;width:auto;padding:5px;display:block" @tap.stop="editStart">{{n.text}}
@@ -526,8 +545,8 @@ function getTop(e) {
           success: tapIndex => {
             if (items[tapIndex] === '换图') {
               // 换图
-              this.root.getSrc('img', node.attrs.src).then(src => {
-                this.root._editVal(this.opts[6] + '.' + i + '.attrs.src', node.attrs.src, src, true)
+              this.root.getSrc('img', node.attrs.src || '').then(url => {
+                this.root._editVal(this.opts[6] + '.' + i + '.attrs.src', node.attrs.src, url instanceof Array ? url[0] : url, true)
               }).catch(() => { })
             } else if (items[tapIndex] === '宽度') {
               // 更改宽度
@@ -581,8 +600,8 @@ function getTop(e) {
               }).catch(() => { })
             } else if (items[tapIndex] === '预览图') {
               // 设置预览图链接
-              this.root.getSrc('img', node.attrs['original-src']).then(url => {
-                this.root._editVal(this.opts[6] + '.' + i + '.attrs.original-src', node.attrs['original-src'], url, true)
+              this.root.getSrc('img', node.attrs['original-src'] || '').then(url => {
+                this.root._editVal(this.opts[6] + '.' + i + '.attrs.original-src', node.attrs['original-src'], url instanceof Array ? url[0] : url, true)
                 uni.showToast({
                   title: '成功'
                 })

@@ -56,6 +56,7 @@ const config = {
   // svg 大小写对照表
   svgDict: {
     animatetransform: 'animateTransform',
+    lineargradient: 'linearGradient',
     viewbox: 'viewBox',
     attributename: 'attributeName',
     repeatcount: 'repeatCount',
@@ -463,7 +464,7 @@ Parser.prototype.onOpenTag = function (selfClose) {
           styleObj.width = ''
         } else {
           node.w = 'T'
-          if (styleObj.height && !styleObj.height.includes('auto')) {
+          if (!isNaN(parseInt(styleObj.height))) {
             node.h = 'T'
           }
         }
@@ -637,7 +638,7 @@ Parser.prototype.popNode = function () {
         } else if (size > 7) {
           size = 7
         }
-        styleObj['font-size'] = ['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'][size - 1]
+        styleObj['font-size'] = ['x-small', 'small', 'medium', 'large', 'x-large', 'xx-large', 'xxx-large'][size - 1]
       }
       attrs.size = undefined
     }

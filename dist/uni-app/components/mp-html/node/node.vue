@@ -1,5 +1,5 @@
 <template>
-  <view @tap="nodeTap" :id="attrs.id" :class="'_'+name+' '+attrs.class" :style="(ctrl.root?'border:1px solid black;padding:5px;display:block;':'')+attrs.style">
+  <view :id="attrs.id" :class="'_block _'+name+' '+attrs.class" :style="attrs.style">
     <block v-for="(n, i) in childs" v-bind:key="i">
       <!-- 图片 -->
       <!-- 占位图 -->
@@ -64,8 +64,8 @@
       <rich-text v-else-if="!opts[4]&&!n.c" :id="n.attrs.id" :style="n.f+';display:inline'" :preview="false" :nodes="[n]" />
       <!-- #endif -->
       <!-- 继续递归 -->
-      <view v-else-if="n.c===2" :id="n.attrs.id" :class="'_'+n.name+' '+n.attrs.class" :style="n.f+';'+n.attrs.style">
-        <node v-for="(n2, j) in n.children" v-bind:key="j" :style="n2.f" :name="n2.name" :attrs="n2.attrs" :childs="n2.children" :opts="[opts[0],opts[1],opts[2],opts[3],opts[4],opts[5],opts[6]+'.'+i+'.children.'+j+'.children']" />
+      <view v-else-if="n.c===2" :id="n.attrs.id" :class="'_block _'+n.name+' '+n.attrs.class" :style="n.f+';'+n.attrs.style">
+        <node v-for="(n2, j) in n.children" v-bind:key="j" :style="n2.f" :name="n2.name" :attrs="n2.attrs" :childs="n2.children" :opts="opts" />
       </view>
       <node v-else :style="n.f" :name="n.name" :attrs="n.attrs" :childs="n.children" :opts="[opts[0],opts[1],opts[2],opts[3],opts[4],opts[5],opts[6]+'.'+i+'.children']" />
     </block>
@@ -843,6 +843,10 @@ myAudio,
 }
 
 /* 内部样式 */
+
+._block {
+  display: block;
+}
 
 ._b,
 ._strong {
