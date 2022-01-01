@@ -83,12 +83,15 @@ module.exports = {
     editEnd (e) {
       const i = e.target.dataset.i
       // 更新到视图
-      this.root.setData({
-        ['nodes[' + (this.properties.opts[6] + i).replace(/_/g, '].children[') + '].text']: e.detail.value
-      })
       this.setData({
         ['ctrl.e' + i]: 0
       })
+      this.root.setData({
+        ['nodes[' + (this.properties.opts[6] + i).replace(/_/g, '].children[') + '].text']: e.detail.value
+      })
+      if (e.detail.cursor !== undefined) {
+        this.cursor = e.detail.cursor
+      }
     },
     /**
      * @description 插入一个标签
@@ -176,6 +179,11 @@ module.exports = {
         const node = this.getNode(i)
         if (this.data.ctrl['e' + this.i] === 3) return
         this.root._maskTap()
+        this.root._edit = this
+        const arr = i.split('_')
+        const j = parseInt(arr.pop())
+        let path = arr.join('_')
+        const siblings = path ? this.getNode(path).children : this.properties.childs
         // 显示实线框
         this.setData({
           ['ctrl.e' + i]: 1
@@ -185,7 +193,6 @@ module.exports = {
             ['ctrl.e' + i]: 0
           })
         })
-        this.root._edit = this
         if (node.children.length === 1 && node.children[0].type === 'text') {
           const ii = i + '_0'
           if (!this.data.ctrl['e' + ii]) {
@@ -203,7 +210,7 @@ module.exports = {
         } else if (!(this.i || '').includes(i)) {
           this.i = i + '_'
         }
-        const items = this.root._getItem(node)
+        const items = this.root._getItem(node, j !== 0, j !== siblings.length - 1)
         this.root._tooltip({
           top: getTop(e),
           items,
@@ -236,6 +243,21 @@ module.exports = {
                   this.root._editVal('nodes[' + (this.properties.opts[6] + i).replace(/_/g, '].children[') + '].attrs.style', style, this.getNode(i).attrs.style)
                 }
               })
+            } else if (items[tapIndex] === '上移' || items[tapIndex] === '下移') {
+              const arr = siblings.slice(0)
+              const item = arr[j]
+              if (items[tapIndex] === '上移') {
+                arr[j] = arr[j - 1]
+                arr[j - 1] = item
+              } else {
+                arr[j] = arr[j + 1]
+                arr[j + 1] = item
+              }
+              path = this.properties.opts[6] + path
+              if (path[path.length - 1] === '_') {
+                path = path.slice(0, -1)
+              }
+              this.root._editVal('nodes' + (path ? '[' + path.replace(/_/g, '].children[') + '].children' : ''), siblings, arr, true)
             } else if (items[tapIndex] === '删除') {
               this.remove(i)
             } else {
@@ -291,8 +313,8 @@ module.exports = {
             switch (items[tapIndex]) {
               case '封面':
                 // 设置封面
-                this.root.getSrc('img', node.attrs.poster).then(url => {
-                  this.root._editVal('nodes[' + (this.properties.opts[6] + i).replace(/_/g, '].children[') + '].attrs.poster', node.attrs.poster, url, true)
+                this.root.getSrc('img', node.attrs.poster || '').then(url => {
+                  this.root._editVal('nodes[' + (this.properties.opts[6] + i).replace(/_/g, '].children[') + '].attrs.poster', node.attrs.poster, url instanceof Array ? url[0] : url, true)
                 }).catch(() => { })
                 break
               case '删除':
@@ -438,17 +460,22 @@ module.exports = {
         content += `/* 提示条 */
 ._tooltip_contain {
   position: absolute;
-  width: 100vw;
+  right: 20px;
+  left: 20px;
   text-align: center;
 }
 
 ._tooltip {
+  box-sizing: border-box;
   display: inline-block;
   width: auto;
+  max-width: 100%;
   height: 30px;
   padding: 0 3px;
+  overflow: scroll;
   font-size: 14px;
   line-height: 30px;
+  white-space: nowrap;
 }
 
 ._tooltip_item {
@@ -506,7 +533,7 @@ module.exports = {
           // 修改文本块
           .replace(/<!--\s*文本\s*-->[\s\S]+?<!--\s*链接\s*-->/,
             `<block wx:elif="{{n.type==='text'}}">
-    <text wx:if="{{!ctrl['e'+i]}}" data-i="{{i}}" decode="{{!opts[4]}}" bindtap="editStart">{{n.text}}
+    <text wx:if="{{!ctrl['e'+i]}}" data-i="{{i}}" mp-weixin:user-select="{{n.us}}" decode="{{!opts[4]}}" bindtap="editStart">{{n.text}}
       <text wx:if="{{!n.text}}" style="color:gray">{{opts[5]||'请输入'}}</text>
     </text>
     <text wx:elif="{{ctrl['e'+i]===1}}" data-i="{{i}}" style="border:1px dashed black;min-width:50px;width:auto;padding:5px;display:block" catchtap="editStart">{{n.text}}
@@ -596,8 +623,8 @@ module.exports = {
           success: tapIndex => {
             if (items[tapIndex] === '换图') {
               // 换图
-              this.root.getSrc('img', node.attrs.src).then(src => {
-                this.root._editVal('nodes[' + (this.properties.opts[6] + i).replace(/_/g, '].children[') + '].attrs.src', node.attrs.src, src, true)
+              this.root.getSrc('img', node.attrs.src || '').then(url => {
+                this.root._editVal('nodes[' + (this.properties.opts[6] + i).replace(/_/g, '].children[') + '].attrs.src', node.attrs.src, url instanceof Array ? url[0] : url, true)
               }).catch(() => { })
             } else if (items[tapIndex] === '宽度') {
               // 更改宽度
@@ -651,8 +678,8 @@ module.exports = {
               }).catch(() => { })
             } else if (items[tapIndex] === '预览图') {
               // 设置预览图链接
-              this.root.getSrc('img', node.attrs['original-src']).then(url => {
-                this.root._editVal('nodes[' + (this.properties.opts[6] + i).replace(/_/g, '].children[') + '].attrs.original-src', node.attrs['original-src'], url, true)
+              this.root.getSrc('img', node.attrs['original-src'] || '').then(url => {
+                this.root._editVal('nodes[' + (this.properties.opts[6] + i).replace(/_/g, '].children[') + '].attrs.original-src', node.attrs['original-src'], url instanceof Array ? url[0] : url, true)
                 wx.showToast({
                   title: '成功'
                 })

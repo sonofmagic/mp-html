@@ -58,13 +58,14 @@ const config = {
   // svg 大小写对照表
   svgDict: {
     animatetransform: 'animateTransform',
+    lineargradient: 'linearGradient',
     viewbox: 'viewBox',
     attributename: 'attributeName',
     repeatcount: 'repeatCount',
     repeatdur: 'repeatDur'
   }
 }
-const tagSelector = {}
+const tagSelector={}
 const {
   windowWidth,
   // #ifdef MP-WEIXIN
@@ -500,7 +501,7 @@ Parser.prototype.onOpenTag = function (selfClose) {
           styleObj.width = ''
         } else {
           node.w = 'T'
-          if (styleObj.height && !styleObj.height.includes('auto')) {
+          if (!isNaN(parseInt(styleObj.height))) {
             node.h = 'T'
           }
         }
@@ -610,7 +611,7 @@ Parser.prototype.popNode = function () {
             node.attrs[item] = undefined
           }
         }
-        for (let i = 0; i < node.children.length; i++) {
+        for (let i = 0; i < (node.children || []).length; i++) {
           traversal(node.children[i])
         }
       }
@@ -695,7 +696,7 @@ Parser.prototype.popNode = function () {
         } else if (size > 7) {
           size = 7
         }
-        styleObj['font-size'] = ['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'][size - 1]
+        styleObj['font-size'] = ['x-small', 'small', 'medium', 'large', 'x-large', 'xx-large', 'xxx-large'][size - 1]
       }
       attrs.size = undefined
     }
