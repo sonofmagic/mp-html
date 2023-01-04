@@ -22,7 +22,7 @@
     "bugs": {
         "url": "https://github.com/sonofmagic/mp-html/issues"
     },
-    "homepage": "https://github.com/sonofmagic/mp-html/blob/master/dist/uni-app/README.md",
+    "homepage": "https://github.com/sonofmagic/mp-html/blob/uni-app-mp-html-dev/patch/README.md",
     "author": "SonOfMagic <qq1324318532@gmail.com>",
     "license": "MIT",
     "publishConfig": {
