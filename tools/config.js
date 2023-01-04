@@ -7,14 +7,14 @@ module.exports = {
    */
   plugins: [
     // 按需打开注释即可
-    // 'audio',     // 音乐播放器
-    // 'editable',  // 内容编辑
-    // 'emoji',     // 小表情
-    // 'highlight', // 代码高亮
-    // 'markdown',  // 解析 md
-    // 'latex',     // 解析 latex
-    // 'search',    // 关键词搜索
-    // 'style',     // 解析 style 标签
+    'audio',     // 音乐播放器
+    'editable',  // 内容编辑
+    'emoji',     // 小表情
+    'highlight', // 代码高亮
+    'markdown',  // 解析 md
+    'latex',     // 解析 latex
+    'search',    // 关键词搜索
+    'style',     // 解析 style 标签
     // 'txv-video', // 使用腾讯视频
     // 'img-cache'  // 图片缓存
   ],

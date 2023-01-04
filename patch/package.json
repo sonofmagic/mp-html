@@ -1,0 +1,38 @@
+{
+    "name": "uni-app-mp-html",
+    "version": "2.4.1",
+    "description": "uni-app 版本的 mp-html, 基于`mp-html@2.4.1` 构建而成, 默认携带一键复制脚本，和开启一些插件",
+    "scripts": {
+        "start": "node prepare.js"
+    },
+    "bin": {
+        "mp-html-init-static": "bin/init-static.js",
+        "mp-html-sync": "bin/sync.js"
+    },
+    "files": [
+        "bin",
+        "components",
+        "scripts",
+        "static"
+    ],
+    "keywords": [
+        "uni-app",
+        "mp-html"
+    ],
+    "bugs": {
+        "url": "https://github.com/sonofmagic/mp-html/issues"
+    },
+    "homepage": "https://github.com/sonofmagic/mp-html/blob/master/dist/uni-app/README.md",
+    "author": "SonOfMagic <qq1324318532@gmail.com>",
+    "license": "MIT",
+    "publishConfig": {
+        "access": "public",
+        "registry": "https://registry.npmjs.org"
+    },
+    "dependencies": {
+        "fs-extra": "^11.1.0"
+    },
+    "devDependencies": {
+        "@types/fs-extra": "^9.0.13"
+    }
+}
