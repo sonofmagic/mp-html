@@ -7,6 +7,7 @@
   - [Usage](#usage)
     - [使用组件](#使用组件)
     - [使用脚本](#使用脚本)
+    - [highlight prism](#highlight-prism)
 
 此版本制作的目的，就是嫌麻烦，每次获取源代码最新的改动后，都要重新打包，然后把产物手动复制到，源代码的各个目录。
 
@@ -70,3 +71,9 @@ npx mp-html-sync path/to/folder
 # 比如复制到子包: subs/markdown
 npx mp-html-sync subs/markdown/components/mp-html
 ```
+
+### highlight prism 
+
+额外添加了许多语言的支持，具体见:
+
+https://github.com/sonofmagic/mp-html/blob/uni-app-mp-html-dev/plugins/highlight/prism.min.js
