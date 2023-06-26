@@ -3,7 +3,8 @@
     "version": "2.4.4",
     "description": "uni-app 版本的 mp-html, 基于`mp-html@2.4.2` 构建而成, 默认携带一键复制脚本，和开启一些插件",
     "scripts": {
-        "start": "node prepare.js"
+        "start": "node prepare.js",
+        "sync": "cnpm sync uni-app-mp-html"
     },
     "bin": {
         "mp-html-init-static": "bin/init-static.js",
