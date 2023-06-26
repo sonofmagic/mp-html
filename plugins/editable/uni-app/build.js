@@ -214,6 +214,19 @@ module.exports = {
                   this.root._editVal(`${parent.opts[7]}.${i}.attrs.style`, style, parent.childs[i].attrs.style)
                 }
               })
+            } else if (items[tapIndex] === '颜色') {
+              // 改变文字颜色
+              const items = this.root._getItem('color')
+              this.root._color({
+                top: getTop(e),
+                items,
+                success: tapIndex => {
+                  const style = parent.childs[i].attrs.style || ''
+                  const value = style.match(/;color:([^;]+)/)
+                  parent.changeStyle('color', i, items[tapIndex], value ? value[1] : undefined)
+                  this.root._editVal(`${parent.opts[7]}.${i}.attrs.style`, style, parent.childs[i].attrs.style)
+                }
+              })
             } else if (items[tapIndex] === '上移' || items[tapIndex] === '下移') {
               const arr = parent.childs.slice(0)
               const item = arr[i]
@@ -271,6 +284,7 @@ module.exports = {
         const i = e.target.dataset.i
         const node = this.childs[i]
         const items = this.root._getItem(node)
+        this.root._maskTap()
         this.root._edit = this
         this.i = i
         this.root._tooltip({
@@ -348,13 +362,19 @@ module.exports = {
     <view v-if="slider" class="_slider" :style="'top:'+slider.top+'px'">
       <slider :value="slider.value" :min="slider.min" :max="slider.max" handle-size="14" block-size="14" show-value activeColor="white" style="padding:3px" @changing="_sliderChanging" @change="_sliderChange" />
     </view>
+    <view v-if="color" class="_tooltip_contain" :style="'top:'+color.top+'px'">
+      <view class="_tooltip" style="overflow-y: hidden;">
+        <view v-for="(item, index) in color.items" v-bind:key="index" class="_color_item" :style="'background-color:'+item" :data-i="index" @tap="_colorTap"></view>
+      </view>
+    </view>
   </view>
 </template>`)
           // 添加 data
           .replace(/data\s*\(\)\s*{\s*return\s*{/, `data() {
     return {
       tooltip: null,
-      slider: null,`)
+      slider: null,
+      color: null,`)
           // 添加 editable 属性
           .replace(/props\s*:\s*{/, `props: {
     editable: Boolean,
@@ -370,7 +390,7 @@ module.exports = {
           // 处理各类弹窗的事件
           .replace(/methods\s*:\s*{/, `methods: {
     _containTap() {
-      if (!this._lock && !this.slider) {
+      if (!this._lock && !this.slider && !this.color) {
         this._edit = undefined
         this._maskTap()
       }
@@ -384,6 +404,10 @@ module.exports = {
     },
     _sliderChange(e) {
       this._slidercb(e.detail.value)
+    },
+    _colorTap(e) {
+      this._colorcb(e.currentTarget.dataset.i)
+      this.$set(this, 'color', null)
     },`)
           // 工具弹窗的样式
           .replace('</style>', `
@@ -415,6 +439,15 @@ module.exports = {
   line-height: 30px;
   background-color: black;
   color: white;
+}
+
+._color_item {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin: 5px 2vw;
+  border:1px solid #dfe2e5;
+  border-radius: 50%;
 }
 
 /* 图片宽度滚动条 */
@@ -490,6 +523,7 @@ module.exports = {
             .replace('audio ', 'audio @tap="mediaTap" ')
             .replace('<script>',
               `<script>
+import Parser from '../parser'
 function getTop(e) {
   let top
   // #ifdef H5 || APP-PLUS
@@ -545,6 +579,7 @@ function getTop(e) {
         const i = e.currentTarget.dataset.i
         const node = this.childs[i]
         const items = this.root._getItem(node)
+        const parser = new Parser(this.root)
         this.root._edit = this
         this.i = i
         this.root._maskTap()
@@ -557,7 +592,7 @@ function getTop(e) {
             if (items[tapIndex] === '换图') {
               // 换图
               this.root.getSrc('img', node.attrs.src || '').then(url => {
-                this.root._editVal(this.opts[7] + '.' + i + '.attrs.src', node.attrs.src, url instanceof Array ? url[0] : url, true)
+                this.root._editVal(this.opts[7] + '.' + i + '.attrs.src', node.attrs.src, parser.getUrl(url instanceof Array ? url[0] : url), true)
               }).catch(() => { })
             } else if (items[tapIndex] === '宽度') {
               // 更改宽度
@@ -593,12 +628,12 @@ function getTop(e) {
               this.root.getSrc('link', node.a ? node.a.href : '').then(url => {
                 // 如果有 a 标签则替换 href
                 if (node.a) {
-                  this.root._editVal(this.opts[7] + '.' + i + '.a.href', node.a.href, url, true)
+                  this.root._editVal(this.opts[7] + '.' + i + '.a.href', node.a.href, parser.getUrl(url), true)
                 } else {
                   const link = {
                     name: 'a',
                     attrs: {
-                      href: url
+                      href: parser.getUrl(url)
                     },
                     children: [node]
                   }
@@ -612,7 +647,7 @@ function getTop(e) {
             } else if (items[tapIndex] === '预览图') {
               // 设置预览图链接
               this.root.getSrc('img', node.attrs['original-src'] || '').then(url => {
-                this.root._editVal(this.opts[7] + '.' + i + '.attrs.original-src', node.attrs['original-src'], url instanceof Array ? url[0] : url, true)
+                this.root._editVal(this.opts[7] + '.' + i + '.attrs.original-src', node.attrs['original-src'], parser.getUrl(url instanceof Array ? url[0] : url), true)
                 uni.showToast({
                   title: '成功'
                 })

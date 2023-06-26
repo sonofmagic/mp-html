@@ -252,6 +252,19 @@ module.exports = {
                   this.root._editVal('nodes[' + (this.properties.opts[7] + i).replace(/_/g, '].children[') + '].attrs.style', style, this.getNode(i).attrs.style)
                 }
               })
+            } else if (items[tapIndex] === '颜色') {
+              // 改变文字颜色
+              const items = this.root._getItem('color')
+              this.root._color({
+                top: getTop(e),
+                items,
+                success: tapIndex => {
+                  const style = node.attrs.style || ''
+                  const value = style.match(/;color:([^;]+)/)
+                  this.changeStyle('color', i, items[tapIndex], value ? value[1] : undefined)
+                  this.root._editVal('nodes[' + (this.properties.opts[7] + i).replace(/_/g, '].children[') + '].attrs.style', style, this.getNode(i).attrs.style)
+                }
+              })
             } else if (items[tapIndex] === '上移' || items[tapIndex] === '下移') {
               const arr = siblings.slice(0)
               const item = arr[j]
@@ -313,6 +326,7 @@ module.exports = {
         const i = e.target.dataset.i
         const node = this.getNode(i)
         const items = this.root._getItem(node)
+        this.root._maskTap()
         this.root._edit = this
         this.i = i
         this.root._tooltip({
@@ -396,6 +410,11 @@ module.exports = {
   <view wx:if="{{slider}}" class="_slider" style="top:{{slider.top}}px">
     <slider value="{{slider.value}}" min="{{slider.min}}" max="{{slider.max}}" block-size="14" show-value activeColor="white" mp-alipay:style="padding:10px" bindchanging="_sliderChanging" bindchange="_sliderChange" />
   </view>
+  <view wx:if="{{color}}" class="_tooltip_contain" style="top:{{color.top}}px">
+    <view class="_tooltip" style="overflow-y: hidden;">
+      <view wx:for="{{color.items}}" wx:key="index" class="_color_item" style="background-color:{{item}}" data-i="{{index}}" bindtap="_colorTap"></view>
+    </view>
+  </view>
 </view>`)
       } else if (file.path.includes('miniprogram' + path.sep + 'index.js')) {
         // 添加 editable 属性，发生变化时重新解析
@@ -452,7 +471,7 @@ module.exports = {
           // 处理各类弹窗的事件
           .replace(/methods\s*:\s*{/, `methods: {
     _containTap() {
-      if (!this._lock && !this.data.slider) {
+      if (!this._lock && !this.data.slider && !this.data.color) {
         this._edit = undefined
         this._maskTap()
       }
@@ -468,6 +487,12 @@ module.exports = {
     },
     _sliderChange(e) {
       this._slidercb(e.detail.value)
+    },
+    _colorTap(e) {
+      this._colorcb(e.currentTarget.dataset.i)
+      this.setData({
+        color: null
+      })
     },`)
       } else if (file.path.includes('miniprogram' + path.sep + 'index.wxss')) {
         // 工具弹窗的样式
@@ -499,6 +524,15 @@ module.exports = {
   line-height: 30px;
   background-color: black;
   color: white;
+}
+
+._color_item {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin: 5px 2vw;
+  border:1px solid #dfe2e5;
+  border-radius: 50%;
 }
 
 /* 图片宽度滚动条 */
@@ -566,7 +600,9 @@ module.exports = {
           .replace('<video', '<video bindtap="mediaTap"')
           .replace('audio ', 'audio bindtap="mediaTap" ')
       } else if (file.path.includes('node.js') && file.extname === '.js') {
-        content = `function getTop(e) {
+        content = `
+        const Parser = require('../parser')
+        function getTop(e) {
   let top
   // #ifndef MP-ALIPAY
   top = e.detail.y
@@ -622,6 +658,7 @@ module.exports = {
         const node = this.getNode(i)
         const items = this.root._getItem(node)
         this.root._edit = this
+        const parser = new Parser(this.root)
         this.i = i
         this.root._maskTap()
         this.setData({
@@ -639,7 +676,7 @@ module.exports = {
             if (items[tapIndex] === '换图') {
               // 换图
               this.root.getSrc('img', node.attrs.src || '').then(url => {
-                this.root._editVal('nodes[' + (this.properties.opts[7] + i).replace(/_/g, '].children[') + '].attrs.src', node.attrs.src, url instanceof Array ? url[0] : url, true)
+                this.root._editVal('nodes[' + (this.properties.opts[7] + i).replace(/_/g, '].children[') + '].attrs.src', node.attrs.src, parser.getUrl(url instanceof Array ? url[0] : url), true)
               }).catch(() => { })
             } else if (items[tapIndex] === '宽度') {
               // 更改宽度
@@ -675,12 +712,12 @@ module.exports = {
               this.root.getSrc('link', node.a ? node.a.href : '').then(url => {
                 // 如果有 a 标签则替换 href
                 if (node.a) {
-                  this.root._editVal('nodes[' + (this.properties.opts[7] + i).replace(/_/g, '].children[') + '].a.href', node.a.href, url, true)
+                  this.root._editVal('nodes[' + (this.properties.opts[7] + i).replace(/_/g, '].children[') + '].a.href', node.a.href, parser.getUrl(url), true)
                 } else {
                   const link = {
                     name: 'a',
                     attrs: {
-                      href: url
+                      href: parser.getUrl(url)
                     },
                     children: [node]
                   }
@@ -694,7 +731,7 @@ module.exports = {
             } else if (items[tapIndex] === '预览图') {
               // 设置预览图链接
               this.root.getSrc('img', node.attrs['original-src'] || '').then(url => {
-                this.root._editVal('nodes[' + (this.properties.opts[7] + i).replace(/_/g, '].children[') + '].attrs.original-src', node.attrs['original-src'], url instanceof Array ? url[0] : url, true)
+                this.root._editVal('nodes[' + (this.properties.opts[7] + i).replace(/_/g, '].children[') + '].attrs.original-src', node.attrs['original-src'], parser.getUrl(url instanceof Array ? url[0] : url), true)
                 wx.showToast({
                   title: '成功'
                 })

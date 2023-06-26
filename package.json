@@ -1,6 +1,6 @@
 {
   "name": "mp-html",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "description": "小程序富文本组件",
   "miniprogram": "dist/mp-weixin",
   "repository": "https://github.com/jin-yufeng/mp-html",
@@ -12,20 +12,8 @@
     "html"
   ],
   "standard": {
-    "globals": [
-      "App",
-      "Page",
-      "Component",
-      "wx",
-      "requirePlugin",
-      "uni",
-      "plus",
-      "weex"
-    ],
-    "envs": [
-      "jest",
-      "browser"
-    ]
+    "globals": ["App", "Page", "Component", "wx", "requirePlugin", "uni", "plus", "weex"],
+    "envs": ["jest", "browser"]
   },
   "jest": {
     "testEnvironment": "jsdom",
@@ -64,7 +52,6 @@
   "devDependencies": {
     "@babel/preset-env": "^7.12.1",
     "coveralls": "^3.1.0",
-    "eslint-plugin-vue": "^9.8.0",
     "gulp": "^4.0.0",
     "gulp-babel": "^8.0.0",
     "gulp-clean": "^0.4.0",
@@ -82,5 +69,6 @@
     "stylelint-config-standard": "^20.0.0",
     "through2": "^4.0.2",
     "uglify-js": "^2.8.29"
-  }
+  },
+  "dependencies": {}
 }
