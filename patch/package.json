@@ -1,7 +1,7 @@
 {
     "name": "uni-app-mp-html",
-    "version": "2.4.6",
-    "description": "uni-app 版本的 mp-html, 基于`mp-html@2.4.2` 构建而成, 默认携带一键复制脚本，和开启一些插件",
+    "version": "2.5.0",
+    "description": "uni-app 版本的 mp-html, 基于`mp-html@2.5.0` 构建而成, 默认携带一键复制脚本，和开启一些插件",
     "scripts": {
         "start": "node prepare.js",
         "sync": "cnpm sync uni-app-mp-html"
@@ -31,9 +31,9 @@
         "registry": "https://registry.npmjs.org"
     },
     "dependencies": {
-        "fs-extra": "^11.1.1"
+        "fs-extra": "^11.2.0"
     },
     "devDependencies": {
-        "@types/fs-extra": "^11.0.2"
+        "@types/fs-extra": "^11.0.4"
     }
 }

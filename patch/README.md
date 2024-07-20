@@ -1,8 +1,8 @@
-# uni-app-mp-html(mp-html@2.4.2)
+# uni-app-mp-html(mp-html@2.5.0)
 
 > forked from [jin-yufeng/mp-html](https://github.com/jin-yufeng/mp-html)
 
-- [uni-app-mp-html(mp-html@2.4.2)](#uni-app-mp-htmlmp-html242)
+- [uni-app-mp-html(mp-html@2.5.0)](#uni-app-mp-htmlmp-html250)
   - [默认开启插件](#默认开启插件)
   - [Usage](#usage)
     - [使用组件](#使用组件)
@@ -13,7 +13,7 @@
 
 所以通过再次发布一个 `npm` 包的方式，来同步多个项目之间 `mp-html` 的升级，和插件配置。
 
-此包基于 `mp-html@2.4.2`版本构建而成，默认携带一键式复制脚本，详见下方:
+此包基于 `mp-html@2.5.0`版本构建而成，默认携带一键式复制脚本，详见下方:
 
 ## 默认开启插件
 
