@@ -32,7 +32,7 @@ module.exports = {
     editStart (e) {
       if (this.opts[5]) {
         const i = e.currentTarget.dataset.i
-        if (!this.ctrl['e' + i]) {
+        if (!this.ctrl['e' + i] && this.opts[5] !== 'simple') {
           // 显示虚线框
           this.$set(this.ctrl, 'e' + i, 1)
           setTimeout(() => {
@@ -42,6 +42,11 @@ module.exports = {
           this.i = i
           this.cursor = this.childs[i].text.length
         } else {
+          if (this.opts[5] === 'simple') {
+            this.root._edit = this
+            this.i = i
+            this.cursor = this.childs[i].text.length
+          }
           this.root._mask.pop()
           this.root._maskTap()
           // 将 text 转为 textarea
@@ -160,6 +165,7 @@ module.exports = {
         if (this.ctrl['e' + this.i] === 3) return
         this.root._maskTap()
         this.root._edit = this
+        if (this.opts[5] === 'simple') return
         let start = this.opts[7].lastIndexOf('children.')
         if (start !== -1) {
           start += 9
@@ -171,7 +177,37 @@ module.exports = {
         while (parent && parent.$options.name !== 'node') {
           parent = parent.$parent
         }
-        if (!parent || this.opts[7].length - parent.opts[7].length > 15) return
+        let remove = () => {
+          parent.remove(i)
+        }
+        if (this.opts[7].length - parent.opts[7].length > 15) {
+          const parts = this.opts[7].split('.')
+          let childs = parent.childs
+          const i = parseInt(parts[parent.opts[7].split('.').length])
+          const oldParent = parent
+          // 删除整个表格
+          remove = () => {
+            oldParent.remove(i)
+          }
+          for (let i = parent.opts[7].split('.').length; i < parts.length - 2; i++) {
+            childs = childs[parts[i]]
+          }
+          const that = this
+          parent = {
+            childs,
+            opts: [undefined, undefined, undefined, undefined, undefined, undefined, undefined, parts.slice(0, parts.length - 2).join('.')],
+            changeStyle (name, i, value, oldVal) {
+              let style = this.childs[i].attrs.style || ''
+              if (style.includes(';' + name + ':' + oldVal)) {
+                style = style.replace(';' + name + ':' + oldVal, ';' + name + ':' + value)
+              } else {
+                style += ';' + name + ':' + value
+              }
+              that.root._setData(`${this.opts[7]}.${i}.attrs.style`, style)
+            }
+          }
+        }
+        if (!parent) return
         // 显示实线框
         this.$set(this.ctrl, 'root', 1)
         this.root._mask.push(() => this.$set(this.ctrl, 'root', 0))
@@ -239,7 +275,7 @@ module.exports = {
               }
               this.root._editVal(parent.opts[7], parent.childs, arr, true)
             } else if (items[tapIndex] === '删除') {
-              parent.remove(i)
+              remove()
             } else {
               const style = parent.childs[i].attrs.style || ''
               let newStyle = ''
@@ -281,14 +317,14 @@ module.exports = {
      */
     mediaTap (e, index) {
       if (this.opts[5]) {
-        const i = index || e.target.dataset.i
+        const i = e.target.dataset.i || index
         const node = this.childs[i]
         const items = this.root._getItem(node)
         this.root._maskTap()
         this.root._edit = this
         this.i = i
         this.root._tooltip({
-          top: (index != undefined ? e.currentTarget.offsetTop: e.target.offsetTop) - 30,
+          top: e.currentTarget.offsetTop - 30,
           items,
           success: tapIndex => {
             switch (items[tapIndex]) {
@@ -316,37 +352,6 @@ module.exports = {
                 uni.showToast({
                   title: '成功'
                 })
-                break
-            }
-          }
-        })
-        // 避免上层出现点击态
-        this.root._lock = true
-        setTimeout(() => {
-          this.root._lock = false
-        }, 50)
-      }
-    },
-    
-    /**
-     * @description 自定义Node被点击
-     * @param {Event} e
-     */
-    nodeClick (e, index) {
-      if (this.opts[5]) {
-        const i = index || e.currentTarget.dataset.i
-        const node = this.childs[i]
-        const items = this.root._getItem(node);
-        this.root._maskTap()
-        this.root._edit = this
-        this.i = i
-        this.root._tooltip({
-          top: e.currentTarget.offsetTop - 30,
-          items,
-          success: tapIndex => {
-            switch (items[tapIndex]) {
-              case '删除':
-                this.remove(i)
                 break
             }
           }
@@ -408,7 +413,7 @@ module.exports = {
       color: null,`)
           // 添加 editable 属性
           .replace(/props\s*:\s*{/, `props: {
-    editable: Boolean,
+    editable: [Boolean, String],
     placeholder: String,`)
           // 添加 watch
           .replace(/watch\s*:\s*{/, `watch: {
@@ -530,7 +535,7 @@ module.exports = {
             // 不使用 rich-text
             .replace(/!n.c/g, '!opts[5]&&!n.c').replace('&&n.c', '&&(n.c||opts[5])')
             // 修改普通标签
-            .replace(/<view\s+:id(.+?)style="/, '<view @tap="nodeTap" :id$1style="(ctrl.root?\'border:1px solid black;padding:5px;display:block;\':\'\')+')
+            .replace(/<view\s+:id(.+?)style="/, '<view @tap="nodeTap" :id$1style="(ctrl.root&&opts[5]!==\'simple\'?\'border:1px solid black;padding:5px;display:block;\':\'\')+')
             // 修改文本块
             .replace(/<!--\s*文本\s*-->[\s\S]+?<!--\s*链接\s*-->/,
               `<!-- 文本 -->
@@ -540,26 +545,29 @@ module.exports = {
       <text v-else-if="n.type==='text'&&ctrl['e'+i]===1" :data-i="i" style="border:1px dashed black;min-width:50px;width:auto;padding:5px;display:block" @tap.stop="editStart">{{n.text}}
         <text v-if="!n.text" style="color:gray">{{opts[6]||'请输入'}}</text>
       </text>
-      <textarea v-else-if="n.type==='text'" style="border:1px dashed black;min-width:50px;width:auto;padding:5px" auto-height maxlength="-1" :focus="ctrl['e'+i]===3" :value="n.text" :data-i="i" @input="editInput" @blur="editEnd" />
+      <textarea v-else-if="n.type==='text'" :style="opts[5]==='simple'?'':'border:1px dashed black;'+'min-width:50px;width:auto;padding:5px'" auto-height maxlength="-1" :focus="ctrl['e'+i]===3" :value="n.text" :data-i="i" @input="editInput" @blur="editEnd" />
       <text v-else-if="n.name==='br'">\\n</text>
       <!-- 链接 -->`)
             // 修改图片
             .replace(/<image(.+?)id="n.attrs.id/, '<image$1id="n.attrs.id||(\'n\'+i)')
             .replace('height:1px', "height:'+(ctrl['h'+i]||1)+'px")
-            .replace(/:style\s*=\s*"\(ctrl\[i\]/g, ':style="(ctrl[\'e\'+i]?\'border:1px dashed black;padding:3px;\':\'\')+(ctrl[i]')
+            .replace(/:style\s*=\s*"\(ctrl\[i\]/g, ':style="(ctrl[\'e\'+i]&&opts[5]!==\'simple\'?\'border:1px dashed black;padding:3px;\':\'\')+(ctrl[i]')
             .replace(/show-menu-by-longpress\s*=\s*"(\S+?)"\s*:image-menu-prevent\s*=\s*"(\S+?)"/, 'show-menu-by-longpress="!opts[5]&&$1" :image-menu-prevent="opts[5]||$2"')
             // 修改音视频
             .replace('v-else-if="n.html"', 'v-else-if="n.html" :data-i="i" @tap="mediaTap"')
             .replace('<video', '<video :show-center-play-btn="!opts[5]" @tap="mediaTap"')
             .replace('<audio ', '<audio @tap="mediaTap" ')
             .replace('<my-audio ', '<my-audio @onClick="mediaTap($event, i)" ')
-            .replace('card ', 'card @onClick="nodeClick($event, i)" ')
+            .replace('card ', 'card @click="mediaTap($event, i)" ')
             .replace('<script>',
               `<script>
 import Parser from '../parser'
 function getTop(e) {
   let top
-  // #ifdef H5 || APP-PLUS
+  // #ifdef H5 && VUE3
+  top = e.pageY
+  // #endif
+  // #ifdef (H5 && VUE2) || APP-PLUS
   top = e.touches[0].pageY
   // #endif
   // #ifdef MP-ALIPAY
@@ -578,7 +586,7 @@ function getTop(e) {
 }`)
             // 周期处理
             .replace(/beforeDestroy\s*\(\)\s*{/, `beforeDestroy () {
-  if (this.root._edit === this) {
+  if (this.root && this.root._edit === this) {
     this.root._edit = undefined
   }`)
             // 记录图片宽度

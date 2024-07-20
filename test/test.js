@@ -62,12 +62,13 @@ console.log('11')
     <a>xxx</a>
   </td>
 </table>
-<table width="100%" border="1">
+<table width="100%" border="1" style="border-collapse: collapse;">
+  <colgroup><col style="width: 40%;"><col style="width: 60%;"></colgroup>
   <tr>
     <th style="vertical-align: bottom;" width="20%">标题1</th>
     <th width="80%">标题2</th>
   </tr>
-  <tr>
+  <tr style="color:gray">
     <td colspan="2" style="vertical-align:middle;text-align:right"><a>内容1</a></td>
   </tr>
 </table>
@@ -88,6 +89,8 @@ console.log('11')
   <pre>var i = 0</pre>
 </div>
 <!-- 测试不同情况中的图片处理 -->
+<img src="xxx" style="width:100px;height:100px;object-fit:contain">
+<img src="xxx" style="width:100px;object-fit:cover;height:100px;">
 <a data-test="test">
   <img src="//xxx.jpg">
 </a>
@@ -105,6 +108,7 @@ console.log('11')
 <img src="yyy.webp" style="width:1000px" ignore>
 <svg />
 <svg viewbox="0 0 1 1"><text>123</text><svg></svg></svg>
+<svg><foreignobject><div>123</div></foreignobject></svg>
 <div class="ql-align-center" style="background-image:url(&quot;/xxx.jpg?a=2&amp;b=3&quot;)"></div>
 <![CDATA[<]]>
 <!-- 测试 flex 布局、未闭合标签、data- 属性处理 -->
@@ -290,7 +294,10 @@ test('event', async () => {
   for (let i = 0; i < 3; i++) {
     node.instance.play({
       target: {
-        id: 'v' + (i % 2)
+        id: 'v' + (i % 2),
+        dataset: {
+          i: (5 + (i % 2)).toString()
+        }
       }
     })
   }
@@ -298,7 +305,10 @@ test('event', async () => {
   comp.instance.setPlaybackRate(1.5)
   node.instance.play({
     target: {
-      id: 'v2'
+      id: 'v2',
+      dataset: {
+        i: '6'
+      }
     }
   })
   // 暂停视频播放
@@ -332,7 +342,10 @@ test('event', async () => {
     // 禁用自动暂停后播放视频
     node.instance.play({
       target: {
-        id: 'v0'
+        id: 'v0',
+        dataset: {
+          i: '5'
+        }
       }
     })
     // 禁用预览后点击图片

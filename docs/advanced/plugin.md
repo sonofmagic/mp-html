@@ -15,12 +15,16 @@
 #### npm 方式
 
 1. 获取完整的组件包  
-   通过 [npm](overview/quickstart#npm) 或 [git](overview/quickstart#git) 等方式获取 **包含完整项目** 的组件包（注意从 *uni-app* 的插件市场中导入的包中仅包含构建后的组件，**不包含** 构建工具和插件）
+   通过 [npm](overview/quickstart#npm) 或 [git](overview/quickstart#git) 等方式获取 **包含完整项目** 的组件包（注意从 *uni-app* 的插件市场中导入的包中仅包含构建后的组件，**不包含** 构建工具和插件）  
+   ![step1](../assets/tutorials/01.png)
 2. 选择需要的插件  
    参考下方插件使用说明，确定要使用的插件，将其名称填入 [tools/config.js](https://github.com/jin-yufeng/mp-html/blob/master/tools/config.js#L8) 中的 *plugins* 中  
    如果想仅在部分平台使用该插件，可以在该插件目录下的 *build.js* 的 *platform* 字段中填入需要的平台名称  
+   ![step2](../assets/tutorials/02.png)
 3. 生成组件包  
    设置完成后，可通过项目提供的命令行工具生成新的组件包，具体见 [生成组件包](advanced/develop#pack)  
+   ![step3_1](../assets/tutorials/03.png)  
+   ![step3_2](../assets/tutorials/04.png)
 4. 按照源码或 *npm* 方式引入构建后的组件包进行使用即可，详见 [引入方式](overview/quickstart#use)
 
 ## audio
@@ -65,6 +69,11 @@
 |:---:|:---:|:---:|:---:|:---:|:---:|
 | √ | √ | √ | √ | √ | √(nvue 不支持) |
 
+##### 示例项目 :id=editable_demo
+微信小程序点击 [代码片段](https://developers.weixin.qq.com/s/S2ZpZDm87fQP) 即可在微信开发者工具中导入；*uni-app* 下载 [示例项目](https://mp-html.oss-cn-hangzhou.aliyuncs.com/editable.zip) 在 *HBuilder X* 中打开即可体验；注意示例项目中不一定包含最新版本，仅供参考使用方法  
+
+?> 也可以参考示例小程序 [源代码](https://github.com/jin-yufeng/mp-html-demo)
+
 说明：  
 引入本插件后，会给组件添加以下属性：  
 
@@ -72,6 +81,8 @@
 |:---:|:---:|:---:|:---:|
 | editable | Boolean | false | 是否开启内容编辑 |
 | placeholder | String | 请输入 | 输入框为空时占位符（[2.1.0+](changelog/changelog#v210)） |
+
+?> [2.5.0](changelog/changelog#v250) 版本起支持将 *editable* 属性设置为 *"simple"* 来开启简易模式，简易模式下，点击文字内容直接进入编辑，不再弹出操作菜单栏和方框
 
 添加以下事件：  
 
@@ -180,11 +191,6 @@ Page({
   }
 })
 ```
-
-##### 示例项目 :id=editable_demo
-微信小程序点击 [代码片段](https://developers.weixin.qq.com/s/GFbJKum77eBy) 即可在微信开发者工具中导入；*uni-app* 下载 [示例项目](https://mp-html.oss-cn-hangzhou.aliyuncs.com/editable.zip) 在 *HBuilder X* 中打开即可体验；注意示例项目中不一定包含最新版本，仅供参考使用方法  
-
-?> 也可以参考示例小程序 [源代码](https://github.com/jin-yufeng/mp-html-demo)
 
 注意事项：  
 不要在 *editable* 属性被设置为 *true* 前通过 [setContent](advanced/api#setContent) 方法（用 [content](basic/prop#content) 属性）设置内容，否则在切换为 *true* 后会变成空白  
@@ -390,9 +396,46 @@ function search (key) {
 说明：  
 引入本插件后，会将 *$xxx$* 的文本内容按照 *latex* 规则进行解析和渲染   
 
+?> [2.5.0](changelog/changelog#v250) 版本起支持 *$$xxx$$* 形式的块级公式
+
 ?> 与 [editable](#editable) 插件共用时，编辑状态下，公式不会渲染，可以直接修改公式文本
 
+?> 在 *js* 的字符串中写 *latex* 公式时需注意 *\\* 会变成转义符，要使用 *\\\\* 或 *String.raw``* 的方式
+
 ?> 本插件通过 [katex-mini](https://github.com/rojer95/katex-mini) 解析 *latex* 文本，[字体文件](https://github.com/KaTeX/KaTeX/tree/main/fonts) 建议自行转存  
+
+## card
+功能：商品（联络人）信息卡  
+大小：*≈7KB*  
+作者：[@whoooami](https://github.com/whoooami)  
+支持平台：  
+
+| 微信小程序 | QQ 小程序 | 百度小程序 | 支付宝小程序 | 头条小程序 | uni-app |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| √ | √ | √ | √ | √ | √(nvue 不支持) |
+
+效果图：  
+![效果图](../assets/plugin/card.png)
+
+参数列表：  
+
+|参数名|是否必须|类型|说明|
+|:---- |:---|:----- |----- |
+|src|是|String|图片Url|
+|title|是|String|标题|
+|desc|是|String|描述|
+|url|是|String|跳转url|
+|color|是|String|文字颜色|
+|bgcolor|是|String|卡片背景颜色|
+|border|是|String|卡片边框颜色|
+
+说明：  
+1. 可以显示商品信息卡片/联络人信息卡片  
+
+基础库要求：    
+满足最低要求即可  
+
+?> 如果希望页面上使用本组件，组件的路径为 *path/to/mp-html/card/card*  
 
 ## 开发插件 :id=develop
 一个插件大致需要以下文件（*plugin/template* 中提供了一个模板） 

@@ -1,5 +1,5 @@
 /*!
- * mp-html v2.4.2
+ * mp-html v2.5.0
  * https://github.com/jin-yufeng/mp-html
  *
  * Released under the MIT license
@@ -78,11 +78,11 @@ Component({
 
     /**
      * @description 是否允许图片被点击时自动预览
-     * @type {Boolean}
+     * @type {Boolean | String}
      * @default true
      */
     previewImg: {
-      type: Boolean,
+      type: null,
       value: true
     },
 

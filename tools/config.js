@@ -38,9 +38,6 @@ module.exports = {
       attrs: ['unit-id']
     }
     */
-    {
-      name: 'card',
-    }
   ],
 
   /**
